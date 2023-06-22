@@ -102,8 +102,8 @@ def remove_silence():
     sound = AudioSegment.from_file(audio_file_path, format="wav")
     non_silence_intervals = silence.detect_nonsilent(sound, min_silence_len=1000, silence_thresh=-32)
     
-    # Trim the video parts that correspond to non-silence intervals of audio
-    video_parts = [video.subclip(max(0, start/1000), min(len(sound)/1000, end/1000)) for start, end in non_silence_intervals]
+    # Convert milliseconds to seconds for subclip
+    video_parts = [video.subclip(max(0, start/1000.0), min(len(sound)/1000.0, end/1000.0)) for start, end in non_silence_intervals]
     final_clip = concatenate_videoclips(video_parts)
 
     final_filename = 'ns_' + filename
@@ -113,3 +113,4 @@ def remove_silence():
     final_video_url = request.url_root + app.config['UPLOAD_FOLDER'] + final_filename
 
     return jsonify({'ns_video_url': final_video_url})
+
