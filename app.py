@@ -78,7 +78,7 @@ def black_and_white():
     return jsonify({'bw_video_url': bw_url})
 
 from pydub import AudioSegment, silence
-from moviepy.editor import AudioFileClip
+from moviepy.editor import concatenate_videoclips
 
 @app.route('/remove_silence', methods=['POST'])
 def remove_silence():
@@ -101,20 +101,15 @@ def remove_silence():
 
     sound = AudioSegment.from_file(audio_file_path, format="wav")
     non_silence_intervals = silence.detect_nonsilent(sound, min_silence_len=1000, silence_thresh=-32)
-    non_silence_audio = sum((sound[start:end] for start, end in non_silence_intervals), AudioSegment.empty())
     
-    ns_audio_filename = 'ns_' + audio_filename
-    ns_audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], ns_audio_filename)
-    non_silence_audio.export(ns_audio_file_path, format="wav")
+    # Trim the video parts that correspond to non-silence intervals of audio
+    video_parts = [video.subclip(max(0, start/1000), min(len(sound)/1000, end/1000)) for start, end in non_silence_intervals]
+    final_clip = concatenate_videoclips(video_parts)
 
-    ns_audio_clip = AudioFileClip(ns_audio_file_path)
-    ns_video = video.set_audio(ns_audio_clip)
-    ns_video_filename = 'ns_' + filename
-    ns_video_file_path = os.path.join(app.config['UPLOAD_FOLDER'], ns_video_filename)
-    ns_video.write_videofile(ns_video_file_path)
+    final_filename = 'ns_' + filename
+    final_file_path = os.path.join(app.config['UPLOAD_FOLDER'], final_filename)
+    final_clip.write_videofile(final_file_path)
 
-    ns_video_url = request.url_root + '/uploads/' + ns_video_filename
+    final_video_url = request.url_root + app.config['UPLOAD_FOLDER'] + final_filename
 
-    return jsonify({'ns_video_url': ns_video_url})
-
-
+    return jsonify({'ns_video_url': final_video_url})
