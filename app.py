@@ -77,11 +77,8 @@ def black_and_white():
 
     return jsonify({'bw_video_url': bw_url})
 
-from pydub import AudioSegment, silence
-from moviepy.editor import concatenate_videoclips
-
-@app.route('/remove_silence', methods=['POST'])
-def remove_silence():
+@app.route('/remove_first_5_seconds', methods=['POST'])
+def remove_first_5_seconds():
     video_url = request.get_json()['url']
     response = requests.get(video_url, stream=True)
 
@@ -95,22 +92,15 @@ def remove_silence():
         f.write(response.content)
 
     video = VideoFileClip(file_path)
-    audio_filename = str(uuid.uuid4()) + '.wav'  
-    audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], audio_filename)
-    video.audio.write_audiofile(audio_file_path)
+    if video.duration < 5.0:
+        return jsonify({'error': 'Video is less than 5 seconds long'}), 400
 
-    sound = AudioSegment.from_file(audio_file_path, format="wav")
-    non_silence_intervals = silence.detect_nonsilent(sound, min_silence_len=1000, silence_thresh=-32)
-    
-    # Convert milliseconds to seconds for subclip
-    video_parts = [video.subclip(max(0, start/1000.0), min(len(sound)/1000.0, end/1000.0)) for start, end in non_silence_intervals]
-    final_clip = concatenate_videoclips(video_parts)
+    modified_video = video.subclip(5, None)  # Start at 5 seconds, end at original end
+    modified_filename = 'modified_' + filename
+    modified_file_path = os.path.join(app.config['UPLOAD_FOLDER'], modified_filename)
+    modified_video.write_videofile(modified_file_path)
 
-    final_filename = 'ns_' + filename
-    final_file_path = os.path.join(app.config['UPLOAD_FOLDER'], final_filename)
-    final_clip.write_videofile(final_file_path)
+    modified_url = request.url_root + app.config['UPLOAD_FOLDER'] + modified_filename
 
-    final_video_url = request.url_root + app.config['UPLOAD_FOLDER'] + final_filename
-
-    return jsonify({'ns_video_url': final_video_url})
+    return jsonify({'modified_video_url': modified_url})
 
