@@ -29,3 +29,25 @@ def homepage():
 @app.route('/hello', methods=['GET'])
 def hello():
     return "Hello"
+
+from moviepy.editor import VideoFileClip
+
+@app.route('/video_length', methods=['POST'])
+def video_length():
+    video_url = request.get_json()['url']
+    response = requests.get(video_url, stream=True)
+
+    if response.status_code != 200:
+        return jsonify({'error': 'Failed to download file'}), 400
+
+    filename = secure_filename(video_url.split('/')[-1])
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    with open(file_path, 'wb') as f:
+        f.write(response.content)
+
+    video = VideoFileClip(file_path)
+    duration = video.duration  # Duration in seconds
+
+    return jsonify({'video_length': duration})
+
