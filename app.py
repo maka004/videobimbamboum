@@ -100,7 +100,7 @@ def trim_video():
     trimmed_file_path = os.path.join(app.config['UPLOAD_FOLDER'], trimmed_filename)
     trimmed_video.write_videofile(trimmed_file_path)
 
-    trimmed_url = request.url_root + app.config['UPLOAD_FOLDER'] + trimmed_filename
+    trimmed_url = request.url_root + 'uploads/' + trimmed_filename
 
     return jsonify({'trimmed_video_url': trimmed_url})
 
