@@ -101,7 +101,7 @@ def remove_silence():
 
     sound = AudioSegment.from_file(audio_file_path, format="wav")
     non_silence_intervals = silence.detect_nonsilent(sound, min_silence_len=1000, silence_thresh=-32)
-    non_silence_audio = concatenate([sound[start:end] for start, end in non_silence_intervals])
+    non_silence_audio = sum((sound[start:end] for start, end in non_silence_intervals), AudioSegment.empty())
     
     ns_audio_filename = 'ns_' + audio_filename
     ns_audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], ns_audio_filename)
