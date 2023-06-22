@@ -73,7 +73,7 @@ def black_and_white():
     bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
     bw_video.write_videofile(bw_file_path)
 
-    bw_url = request.url_root + app.config['UPLOAD_FOLDER'] + bw_filename
+    bw_url = request.url_root + '/uploads/' + bw_filename
 
     return jsonify({'bw_video_url': bw_url})
 
