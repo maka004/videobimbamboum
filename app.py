@@ -78,7 +78,7 @@ def black_and_white():
     return jsonify({'bw_video_url': bw_url})
 
 from pydub import AudioSegment, silence
-from moviepy.editor import concatenate
+from moviepy.editor import AudioFileClip
 
 @app.route('/remove_silence', methods=['POST'])
 def remove_silence():
@@ -107,7 +107,8 @@ def remove_silence():
     ns_audio_file_path = os.path.join(app.config['UPLOAD_FOLDER'], ns_audio_filename)
     non_silence_audio.export(ns_audio_file_path, format="wav")
 
-    ns_video = video.set_audio(AudioSegment.from_wav(ns_audio_file_path))
+    ns_audio_clip = AudioFileClip(ns_audio_file_path)
+    ns_video = video.set_audio(ns_audio_clip)
     ns_video_filename = 'ns_' + filename
     ns_video_file_path = os.path.join(app.config['UPLOAD_FOLDER'], ns_video_filename)
     ns_video.write_videofile(ns_video_file_path)
@@ -115,4 +116,5 @@ def remove_silence():
     ns_video_url = request.url_root + '/uploads/' + ns_video_filename
 
     return jsonify({'ns_video_url': ns_video_url})
+
 
