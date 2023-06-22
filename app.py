@@ -51,3 +51,29 @@ def video_length():
 
     return jsonify({'video_length': duration})
 
+from moviepy.video.fx.all import blackwhite
+
+@app.route('/black_and_white', methods=['POST'])
+def black_and_white():
+    video_url = request.get_json()['url']
+    response = requests.get(video_url, stream=True)
+
+    if response.status_code != 200:
+        return jsonify({'error': 'Failed to download file'}), 400
+
+    filename = secure_filename(video_url.split('/')[-1])
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    with open(file_path, 'wb') as f:
+        f.write(response.content)
+
+    video = VideoFileClip(file_path)
+    bw_video = blackwhite(video)
+    bw_filename = 'bw_' + filename
+    bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
+    bw_video.write_videofile(bw_file_path)
+
+    bw_url = request.url_root + app.config['UPLOAD_FOLDER'] + bw_filename
+
+    return jsonify({'bw_video_url': bw_url})
+
