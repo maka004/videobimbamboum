@@ -77,9 +77,12 @@ def black_and_white():
 
     return jsonify({'bw_video_url': bw_url})
 
-@app.route('/remove_first_5_seconds', methods=['POST'])
-def remove_first_5_seconds():
-    video_url = request.get_json()['url']
+@app.route('/trim_video', methods=['POST'])
+def trim_video():
+    data = request.get_json()
+    video_url = data['url']
+    trim_seconds = int(data['seconds'])
+
     response = requests.get(video_url, stream=True)
 
     if response.status_code != 200:
@@ -92,15 +95,13 @@ def remove_first_5_seconds():
         f.write(response.content)
 
     video = VideoFileClip(file_path)
-    if video.duration < 5.0:
-        return jsonify({'error': 'Video is less than 5 seconds long'}), 400
+    trimmed_video = video.subclip(trim_seconds, video.duration)
+    trimmed_filename = 'trimmed_' + filename
+    trimmed_file_path = os.path.join(app.config['UPLOAD_FOLDER'], trimmed_filename)
+    trimmed_video.write_videofile(trimmed_file_path)
 
-    modified_video = video.subclip(5, None)  # Start at 5 seconds, end at original end
-    modified_filename = 'modified_' + filename
-    modified_file_path = os.path.join(app.config['UPLOAD_FOLDER'], modified_filename)
-    modified_video.write_videofile(modified_file_path)
+    trimmed_url = request.url_root + app.config['UPLOAD_FOLDER'] + trimmed_filename
 
-    modified_url = request.url_root + app.config['UPLOAD_FOLDER'] + modified_filename
+    return jsonify({'trimmed_video_url': trimmed_url})
 
-    return jsonify({'modified_video_url': modified_url})
 
