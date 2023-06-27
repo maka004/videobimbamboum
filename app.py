@@ -114,10 +114,10 @@ def get_similar():
     # Extract embeddings and their corresponding texts
     vectors = []
     for pair in vector_text_pairs:
-        if isinstance(pair['embeddings'], str):
-            vectors.append(json.loads(pair['embeddings']))
+        if isinstance(pair['embedding'], str):
+            vectors.append(json.loads(pair['embedding']))
         else:
-            vectors.append(pair['embeddings'])
+            vectors.append(pair['embedding'])
     texts = [pair['text'] for pair in vector_text_pairs]
 
     # Calculate cosine similarity for each vector
