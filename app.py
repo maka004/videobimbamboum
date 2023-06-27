@@ -106,7 +106,7 @@ def trim_video():
     return jsonify({'trimmed_video_url': trimmed_url})
 
 @app.route('/cosine_similarity', methods=['POST'])
-def cosine_similarity():
+def get_similar():
     data = request.json
     query_vector = data['query_vector']
     vector_text_pairs = data['vectors']
