@@ -6,6 +6,7 @@ import requests
 from werkzeug.utils import secure_filename
 import os
 import ffmpeg
+from scipy.spatial import distance
 
 
 def create_app():
