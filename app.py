@@ -126,3 +126,60 @@ def get_similar():
     most_similar_index = max(range(len(vectors)), key=lambda index: 1 - distance.cosine(query_vector, vectors[index]))
 
     return jsonify({'most_similar_text': texts[most_similar_index]})
+import requests
+import polyline
+from geopy.distance import geodesic
+
+def get_directions(api_key, origin, destination):
+    url = f"https://maps.googleapis.com/maps/api/directions/json?origin={origin}&destination={destination}&key={api_key}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+def decode_polyline(polyline_str):
+    return polyline.decode(polyline_str)
+
+def get_waypoints(route_points, interval_km=0.5):
+    waypoints = []
+    accumulated_distance = 0.0
+    waypoints.append(route_points[0])  # Start point
+    
+    for i in range(1, len(route_points)):
+        start_point = route_points[i - 1]
+        end_point = route_points[i]
+        segment_distance = geodesic(start_point, end_point).km
+        
+        while accumulated_distance + segment_distance >= interval_km:
+            fraction = (interval_km - accumulated_distance) / segment_distance
+            waypoint_lat = start_point[0] + fraction * (end_point[0] - start_point[0])
+            waypoint_lng = start_point[1] + fraction * (end_point[1] - start_point[1])
+            waypoints.append((waypoint_lat, waypoint_lng))
+            accumulated_distance = 0.0
+            start_point = (waypoint_lat, waypoint_lng)
+            segment_distance = geodesic(start_point, end_point).km
+            
+        accumulated_distance += segment_distance
+    
+    return waypoints
+
+def main():
+    api_key = "YOUR_GOOGLE_MAPS_API_KEY"
+    origin = "origin_latitude,origin_longitude"
+    destination = "destination_latitude,destination_longitude"
+    
+    directions_data = get_directions(api_key, origin, destination)
+    if directions_data and directions_data['status'] == 'OK':
+        route = directions_data['routes'][0]
+        polyline_str = route['overview_polyline']['points']
+        route_points = decode_polyline(polyline_str)
+        waypoints = get_waypoints(route_points)
+        print("Waypoints at 0.5 km intervals:")
+        for waypoint in waypoints:
+            print(waypoint)
+    else:
+        print("Error fetching directions")
+
+if __name__ == "__main__":
+    main()
