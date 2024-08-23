@@ -70,10 +70,10 @@ def trim_video():
             print("Failed to download the video.")
             return jsonify({'error': 'Failed to download file'}), 400
 
-        # Ensure the filename is clean and valid
-        filename = secure_filename(video_url.split('/')[-1])
-        filename = filename.split('?')[0]  # Remove query parameters if any
+        # Generate a safe and clean filename
+        filename = secure_filename(video_url.split('/')[-1].split('?')[0])  # Remove query parameters if any
 
+        # Add default extension if missing
         if '.' not in filename:
             filename += '.mp4'  # Default to .mp4 if no extension is present
 
@@ -98,7 +98,7 @@ def trim_video():
             print(f"Failed to trim video: {e}")
             return jsonify({'error': f"Failed to trim video: {e}"}), 500
 
-        # Simplify the filename for output
+        # Construct a simple filename for the output
         base_filename, ext = os.path.splitext(filename)
         trimmed_filename = f'trimmed_{base_filename}{ext}'
         trimmed_file_path = os.path.join(app.config['UPLOAD_FOLDER'], trimmed_filename)
@@ -133,6 +133,7 @@ def trim_video():
 def uploaded_file(filename):
     print(f"Request to serve file: {filename}")
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 
 
 
