@@ -112,7 +112,9 @@ def black_and_white():
         bw_video = blackwhite(video)
         bw_filename = 'bw_' + filename
         bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
-        bw_video.write_videofile(bw_file_path)
+
+        # Specify the codec explicitly
+        bw_video.write_videofile(bw_file_path, codec='libx264')
 
         bw_url = request.url_root + 'uploads/' + bw_filename
 
@@ -123,10 +125,3 @@ def black_and_white():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-if __name__ == "__main__":
-    app.run(debug=True)
