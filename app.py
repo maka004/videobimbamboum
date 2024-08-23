@@ -53,31 +53,63 @@ def video_length():
 
     return jsonify({'video_length': duration})
 
+from flask import Flask, request, jsonify
+from werkzeug.utils import secure_filename
+from moviepy.editor import VideoFileClip
 from moviepy.video.fx.all import blackwhite
+import requests
+import os
+
+app = Flask(__name__)
+
+# Ensure that UPLOAD_FOLDER is correctly configured
+app.config['UPLOAD_FOLDER'] = 'path/to/your/upload/directory'
 
 @app.route('/black_and_white', methods=['POST'])
 def black_and_white():
-    video_url = request.get_json()['url']
-    response = requests.get(video_url, stream=True)
+    try:
+        # Extract URL from request
+        video_url = request.get_json().get('url')
+        if not video_url:
+            return jsonify({'error': 'No URL provided'}), 400
 
-    if response.status_code != 200:
-        return jsonify({'error': 'Failed to download file'}), 400
+        # Download the video file
+        response = requests.get(video_url, stream=True)
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to download file'}), 400
 
-    filename = secure_filename(video_url.split('/')[-1])
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        # Save the file locally
+        filename = secure_filename(video_url.split('/')[-1])
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-    with open(file_path, 'wb') as f:
-        f.write(response.content)
+        with open(file_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
 
-    video = VideoFileClip(file_path)
-    bw_video = blackwhite(video)
-    bw_filename = 'bw_' + filename
-    bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
-    bw_video.write_videofile(bw_file_path)
+        # Process the video to black and white
+        video = VideoFileClip(file_path)
+        bw_video = blackwhite(video)
+        bw_filename = 'bw_' + filename
+        bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
+        bw_video.write_videofile(bw_file_path)
 
-    bw_url = request.url_root + '/uploads/' + bw_filename
+        # Construct the URL to return
+        bw_url = request.url_root + 'uploads/' + bw_filename
 
-    return jsonify({'bw_video_url': bw_url})
+        # Cleanup original file if needed
+        video.close()
+        os.remove(file_path)
+
+        return jsonify({'bw_video_url': bw_url})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+
 
 @app.route('/trim_video', methods=['POST'])
 def trim_video():
