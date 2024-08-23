@@ -13,15 +13,11 @@ RUN apt-get update && \
 # Set the working directory in the container to /app
 WORKDIR /app
 
-# Add the requirements file first to leverage Docker cache
-COPY requirements.txt .
-
-# Install Python dependencies, including Flask, flask-cors, and others
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Add the current directory files to /app in the container
+# Copy all project files to the working directory
 COPY . .
+
+# Install Python dependencies directly in Dockerfile
+RUN pip install --no-cache-dir flask werkzeug ffmpeg-python requests gunicorn moviepy pydub scipy flask-cors
 
 # Run app.py (Flask server) when the container launches
 CMD gunicorn --bind 0.0.0.0:$PORT app:app
-
