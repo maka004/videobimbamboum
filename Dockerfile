@@ -20,4 +20,4 @@ COPY . .
 RUN pip install --no-cache-dir flask werkzeug ffmpeg-python requests gunicorn moviepy pydub scipy flask-cors
 
 # Run app.py (Flask server) when the container launches
-CMD gunicorn --bind 0.0.0.0:$PORT app:app
+CMD gunicorn --bind 0.0.0.0:$PORT --timeout 120 app:app
