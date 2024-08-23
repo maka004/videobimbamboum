@@ -95,34 +95,38 @@ def black_and_white():
             return jsonify({'error': 'No URL provided'}), 400
 
         video_url = data['url']
+        print(f"Downloading video from URL: {video_url}")
         response = requests.get(video_url, stream=True)
 
         if response.status_code != 200:
+            print("Failed to download the video.")
             return jsonify({'error': 'Failed to download file'}), 400
 
         filename = secure_filename(video_url.split('/')[-1])
         filename = filename.split('?')[0]  # Remove query parameters if any
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        print(f"Saving video to: {file_path}")
 
         with open(file_path, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
 
-        # Debugging information
-        print(f"File downloaded successfully: {file_path}")
+        print(f"Video downloaded successfully: {file_path}")
 
         video = VideoFileClip(file_path)
+        print("Video file loaded into MoviePy.")
+
         bw_video = blackwhite(video)
-        
+        print("Black and white conversion done.")
+
         base_filename, ext = os.path.splitext(filename)
         bw_filename = base_filename + '_bw' + ext
         bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
-
-        # Debugging information
-        print(f"Black and white video will be saved as: {bw_file_path}")
+        print(f"Saving black and white video to: {bw_file_path}")
 
         bw_video.write_videofile(bw_file_path, codec='libx264')
+        print("Black and white video saved successfully.")
 
         bw_url = request.url_root + 'uploads/' + bw_filename
 
@@ -132,6 +136,5 @@ def black_and_white():
         return jsonify({'bw_video_url': bw_url})
 
     except Exception as e:
-        # Detailed error logging
-        print(f"Error processing video: {str(e)}")
+        print(f"Error during processing: {str(e)}")
         return jsonify({'error': str(e)}), 500
