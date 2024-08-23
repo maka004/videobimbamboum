@@ -59,28 +59,27 @@ from moviepy.editor import VideoFileClip
 from moviepy.video.fx.all import blackwhite
 import os
 import requests
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
-# Ensure this folder exists and is writable
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.route('/black_and_white', methods=['POST'])
 def black_and_white():
     try:
-        # Extract URL from request
         data = request.get_json()
         if 'url' not in data:
             return jsonify({'error': 'No URL provided'}), 400
-        
+
         video_url = data['url']
         response = requests.get(video_url, stream=True)
 
         if response.status_code != 200:
             return jsonify({'error': 'Failed to download file'}), 400
 
-        # Save the file locally
         filename = secure_filename(video_url.split('/')[-1])
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
@@ -89,17 +88,14 @@ def black_and_white():
                 if chunk:
                     f.write(chunk)
 
-        # Process the video to black and white
         video = VideoFileClip(file_path)
         bw_video = blackwhite(video)
         bw_filename = 'bw_' + filename
         bw_file_path = os.path.join(app.config['UPLOAD_FOLDER'], bw_filename)
         bw_video.write_videofile(bw_file_path)
 
-        # Construct the URL to return
         bw_url = request.url_root + 'uploads/' + bw_filename
 
-        # Clean up original file
         video.close()
         os.remove(file_path)
 
@@ -108,13 +104,12 @@ def black_and_white():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Route to serve the processed video file
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Don't include `app.run()` for production deployment
+
 
 
 
